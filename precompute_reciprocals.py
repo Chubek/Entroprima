@@ -59,8 +59,12 @@ def generate_reciprocal_range(range=range(0, 2000)) -> list[int]:
     return [precompute_reciprocal_single(i) for i in range]
 
 
-def format_reciprocal_range(rng: list[int], split=8, prefix=".int") -> list[int]:
-    return "\n".join([f"{prefix} {', '.join(list(map(lambda i: f'0x{i:08x}', portion)))}" for portion in [rng[i:i+split] for i in range(0, len(rng), split)]])
+def format_reciprocal_range(rng: list[int], split=8, prefix=".int", pad="08x") -> list[int]:
+    rng = list(map(lambda i: '0x' + format(i, pad), rng))
+    portions = [rng[i:i+split] for i in range(0, len(rng), split)]
+    portions_joined = list(map(", ".join, portions))
+    portions_formatted = list(map(lambda p: f"{prefix} {p}", portions_joined))
+    return "\n".join(portions_formatted)
 
 
 if __name__ == "__main__":
@@ -69,7 +73,7 @@ if __name__ == "__main__":
     def parse_or_default(arg: str, patt: list[str], default: any, fn=int):
         return fn(arg.split("=")[-1]) if any([arg.startswith(s) for s in patt]) else default
 
-    def print_and_exit(_, msg=f"{executable.split('/')[-1]} {argv[0]} [--start/-s]=[0] [--end/-e]=[1000] [--start/-s]=[reciprocals.S] [--sectname/-sn]=[.section reciprocals, \"a\", @progbits] [--perline/-pl]=[2] [--prefix/-pr]=[.int]"):
+    def print_and_exit(_, msg=f"{executable.split('/')[-1]} {argv[0]} [--start/-s]=[0] [--end/-e]=[1000] [--start/-s]=[reciprocals.S] [--sectname/-sn]=[.section reciprocals, \"a\", @progbits] [--perline/-pl]=[2] [--prefix/-pr]=[.int] [--pad/-pd]=[08x]"):
         print(msg)
         exit(1)
 
@@ -84,6 +88,7 @@ if __name__ == "__main__":
         start = parse_or_default(arg, ["--start", "-s"], 1)
         end = parse_or_default(arg, ["--end", "-e"], 1001)
         outp = parse_or_default(arg, ["--out", "-o"], "reciprocals.inc", str)       
+        pad = parse_or_default(arg, ["--pad", "-pd"], "08x", str)
         sectname = parse_or_default(arg, ["--sectname", "-sn"], '.section reciprocals, "a", @progbits', str)
         prefix = parse_or_default(arg, ["--prefix", "-pr"], '.int', str)
         perline = parse_or_default(arg, ["--perline", "-pl"], 2)
@@ -92,6 +97,6 @@ if __name__ == "__main__":
         _ = parse_or_default(arg, ["--test", "-t"], None, test_and_exit)
 
     rangerpc = generate_reciprocal_range(range(start, end))
-    formatted = format_reciprocal_range(rangerpc, perline, prefix=prefix)
+    formatted = format_reciprocal_range(rangerpc, perline, prefix=prefix, pad=pad)
     with open(outp, "w") as fw:
         fw.write(f'{sectname}\n{formatted}')
