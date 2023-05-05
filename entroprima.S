@@ -1,3 +1,5 @@
+#define SYSCNR_read $0
+#define SYSCNR_write $1
 #define SYSCNR_open $2
 #define SYSCNR_close $3
 #define SYSCNR_readv $19
@@ -7,12 +9,15 @@
 #define SYSCNR_register %rax
 #define SYSCNR_yield %rax
 
+#define SYSCID_stdout $1
+
 #define SYSCARG_0 %rdi
 #define SYSCARG_1 %rsi
 #define SYSCARG_2 %rdx
 #define SYSCARG_3 %r10
 #define SYSCARG_4 %r8
 #define SYSCARG_5 %r9
+
 
 #define SUBROUT_R %rax
 
@@ -26,7 +31,7 @@
 	.global read_sequence
 	.global get_entropy
 	.global count_bytes_til_newl
-	.global int_to_ascii
+	.global uint16_to_ascii_and_print
 
 
 	divmagics:
@@ -118,7 +123,7 @@
 
 		#undef BUFF_PTR
 		#undef BUFF_LEN
-
+/*
 
 	count_bytes_til_newl:
 		#define BYTE_PTR %rdi
@@ -153,21 +158,83 @@
         #undef DWRD_REG
         #undef TEMP_REG
         #undef NEWL_NUM
+*/
 
-
-    int_to_ascii:
+    uint16_to_ascii_and_print:
     	#define NUMB_INT %rdi
     	#define CNTR_REG %rcx
     	#define STCK_PTR %rsp
     	#define FRAM_PTR %rbp
+    	#define TEMP_RG1 %r10
+    	#define TEMP_RG2 %r11
+    	#define TEMP_BY1 %r10b
+    	#define MULQ_REG %rax
+    	#define UI16_MAX $65535
+    	#define UI16_BIT $16
     	#define ASCI_ZER $48
-    	#define MAXM_LEN $48
-    	#define DECA_MAG $0x999a00030001
+    	#define MAXM_LEN $64
+    	#define MAXM_NUL $65
+    	#define DECA_MAG $39322
+    	#define DECA_SH1 $1
+    	#define DECA_SH2 $3
+    	#define NEWL_CHR $10
 
     	pushq FRAM_PTR
     	movq STCK_PTR, FRAM_PTR
-    	subq MAXM_LEN, FRAM_PTR
+    	movq FRAM_PTR, CNTR_REG
 
-    	movq MAXM_LEN, CNTR_REG
-    
     1:
+    	decq FRAM_PTR
+    	movq DECA_MAG, MULQ_REG
+    	mulq NUMB_INT
+    	shrq UI16_BIT, MULQ_REG
+    	andq UI16_MAX, MULQ_REG
+    	movq NUMB_INT, TEMP_RG2
+    	subq MULQ_REG, TEMP_RG2
+    	shrq DECA_SH1, TEMP_RG2
+    	addq TEMP_RG2, MULQ_REG
+    	shrq DECA_SH2, MULQ_REG
+    	movq MULQ_REG, TEMP_RG1
+    	movq MULQ_REG, TEMP_RG2
+    	shlq DECA_SH1, TEMP_RG1
+    	shlq DECA_SH2, TEMP_RG2
+    	addq TEMP_RG1, TEMP_RG2
+    	movq NUMB_INT, TEMP_RG1
+    	subq TEMP_RG2, TEMP_RG1
+    	addq ASCI_ZER, TEMP_RG1
+    	movb TEMP_BY1, (FRAM_PTR)
+    	movq MULQ_REG, NUMB_INT
+    	test NUMB_INT, NUMB_INT
+    	jnz 1b
+    	
+    	movb NEWL_CHR, TEMP_BY1
+    	movb TEMP_BY1, (CNTR_REG)
+    	subq FRAM_PTR, CNTR_REG
+    	incq CNTR_REG
+    	movq SYSCNR_write, SYSCNR_register
+    	movq SYSCID_stdout, SYSCARG_0
+    	movq FRAM_PTR, SYSCARG_1
+    	movq CNTR_REG, SYSCARG_2
+    	syscall
+
+    	popq FRAM_PTR
+
+    	ret
+
+    	#undef NUMB_INT
+        #undef CNTR_REG
+        #undef STCK_PTR
+        #undef FRAM_PTR
+        #undef TEMP_RG1
+        #undef TEMP_RG2
+        #undef TEMP_BY1
+        #undef MULQ_REG
+        #undef UI16_MAX
+        #undef UI16_BIT
+        #undef ASCI_ZER
+        #undef MAXM_LEN
+        #undef MAXM_NUL
+        #undef DECA_MAG
+        #undef DECA_SH1
+        #undef DECA_SH2
+        #undef NEWL_CHR
