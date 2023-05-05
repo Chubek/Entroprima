@@ -25,10 +25,12 @@
 	.global unallocate_memory
 	.global read_sequence
 	.global get_entropy
+	.global count_bytes_til_newl
+	.global int_to_ascii
 
 
-	precomp_reciprocals:
-	#include "reciprocals.inc"
+	divmagics:
+	#include "divmagics.inc"
 
 
 .text
@@ -153,4 +155,19 @@
         #undef NEWL_NUM
 
 
+    int_to_ascii:
+    	#define NUMB_INT %rdi
+    	#define CNTR_REG %rcx
+    	#define STCK_PTR %rsp
+    	#define FRAM_PTR %rbp
+    	#define ASCI_ZER $48
+    	#define MAXM_LEN $48
+    	#define DECA_MAG $0x999a00030001
+
+    	pushq FRAM_PTR
+    	movq STCK_PTR, FRAM_PTR
+    	subq MAXM_LEN, FRAM_PTR
+
+    	movq MAXM_LEN, CNTR_REG
     
+    1:
