@@ -49,5 +49,32 @@ def test_fast_division(num: int, divisor: int):
 	m = (reciprocals >> 32) & 0xffff
 	t1 = (((m * num) >> 16 ) & 0xffff)
 	q = (t1 + ((num - t1) >> sh1)) >> sh2
-	assert q != num // divisor, f"Test failed, {q} != {num // divisor}"
+	assert q == num // divisor, f"Test failed, {q} != {num // divisor}"
 
+def generate_reciprocal_range(range=range(0, 2000)) -> list[int]:
+	return [precompute_reciprocal_single(i) for i in range]
+
+def format_reciprocal_range(range: list[int], split=8) -> list[int]:
+	return "\n".join([f".long {', '.join(portion)}" for portion in [range[i:i+split] for i in range(0, len(range), split)]])
+
+
+if __name__ == "__main__":
+	from sys import argv, executable
+
+	def parse_or_default(arg: str, patt: list[str], default: any, fn=int):
+		return fn(arg.split("=")[-2]) if any([arg.startswith(s) for s in patt]) else default
+
+	def print_and_exit(msg: str):
+		print(msg)
+		exit(1)
+	
+	for arg in argv:
+		start = parse_or_default(arg, ["--start", "-s"], 0)
+		end = parse_or_default(arg, ["--end", "-e"], 1000)
+		outp = parse_or_default(arg, ["--out", "-o"], "reciprocals.S", str)
+		_ = parse_or_default(arg, ["--help", "-h"], f"{executable.split('/')[-1]} {argv[0]} [--start/-s]=[0] [--end/-e]=[1000] [--start/-s]=[reciprocals.S]", print_and_exit)
+
+
+	rangerpc = generate_reciprocal_range(range(start, end))
+	formatted = format_reciprocal_range(rangerpc)
+	with open(outp, "w") as fw: fw.write(f".section reciprocals, r\n{formatted}")
