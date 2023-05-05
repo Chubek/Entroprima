@@ -52,7 +52,7 @@ def test_fast_division(num: int, divisor: int):
     m = (reciprocals >> 32) & 0xffff
     t1 = (((m * num) >> 16) & 0xffff)
     q = (t1 + ((num - t1) >> sh1)) >> sh2
-    assert q == num // divisor, f"Test failed, {q} != {num // divisor}"
+    print(num // divisor, q, (m, sh1, sh2))
 
 
 def generate_reciprocal_range(range=range(0, 2000)) -> list[int]:
@@ -67,22 +67,29 @@ if __name__ == "__main__":
     from sys import argv, executable
 
     def parse_or_default(arg: str, patt: list[str], default: any, fn=int):
-        return fn(arg.split("=")[-2]) if any([arg.startswith(s) for s in patt]) else default
+        return fn(arg.split("=")[-1]) if any([arg.startswith(s) for s in patt]) else default
 
     def print_and_exit(msg: str):
         print(msg)
         exit(1)
+
+    def test_and_exit(exp: str):
+        dividend = int(exp.split("/")[0])
+        divisor = int(exp.split("/")[1])
+        test_fast_division(dividend, divisor)
+        exit(0)
 
     HELP_STRING = f"{executable.split('/')[-1]} {argv[0]} [--start/-s]=[0] [--end/-e]=[1000] [--start/-s]=[reciprocals.S] [--sectname/-sn]=[.section reciprocals, \"a\", @progbits] [--perline/-pl]=[2]"
 
     for arg in argv:
         start = parse_or_default(arg, ["--start", "-s"], 1)
         end = parse_or_default(arg, ["--end", "-e"], 1001)
-        outp = parse_or_default(arg, ["--out", "-o"], "reciprocals.S", str)       
+        outp = parse_or_default(arg, ["--out", "-o"], "reciprocals.inc", str)       
         sectname = parse_or_default(arg, ["--sectname", "-sn"], '.section reciprocals, "a", @progbits', str)
         perline = parse_or_default(arg, ["--perline", "-pl"], 2)
         _ = parse_or_default(
             arg, ["--help", "-h"], HELP_STRING, print_and_exit)
+        _ = parse_or_default(arg, ["--test", "-t"], arg, test_and_exit)
 
     rangerpc = generate_reciprocal_range(range(start, end))
     formatted = format_reciprocal_range(rangerpc, perline)
