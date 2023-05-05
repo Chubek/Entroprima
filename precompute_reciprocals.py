@@ -42,14 +42,14 @@ def precompute_reciprocal_single(divisor: int) -> int:
     m = (SIXTEENP2 * (fast_expontentiation(2, l) - divisor) // divisor) + 1
     sh1 = 1 if l > 0 else l
     sh2 = l - sh1
-    return (sh1 & 0xffff) | ((sh2 & 0xffff) << 16) | ((m & 0xffff) << 32)
+    return (sh1 & 0b1111) | ((sh2 & 0b1111) << 4) | ((m & 0xffff) << 8)
 
 
 def test_fast_division(num: int, divisor: int):
     reciprocals = precompute_reciprocal_single(divisor)
-    sh1 = reciprocals & 0xffff
-    sh2 = (reciprocals >> 16) & 0xffff
-    m = (reciprocals >> 32) & 0xffff
+    sh1 = reciprocals & 0b1111
+    sh2 = (reciprocals >> 4) & 0b1111
+    m = (reciprocals >> 8) & 0xffff
     t1 = (((m * num) >> 16) & 0xffff)
     q = (t1 + ((num - t1) >> sh1)) >> sh2
     print(num // divisor, q, (m, sh1, sh2))
@@ -60,7 +60,7 @@ def generate_reciprocal_range(range=range(0, 2000)) -> list[int]:
 
 
 def format_reciprocal_range(rng: list[int], split=8) -> list[int]:
-    return "\n".join([f".long {', '.join(list(map(hex, portion)))}" for portion in [rng[i:i+split] for i in range(0, len(rng), split)]])
+    return "\n".join([f".long {', '.join(list(map(lambda i: f'0x{i:06x}', portion)))}" for portion in [rng[i:i+split] for i in range(0, len(rng), split)]])
 
 
 if __name__ == "__main__":
