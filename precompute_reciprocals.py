@@ -79,7 +79,7 @@ if __name__ == "__main__":
         test_fast_division(dividend, divisor)
         exit(0)
 
-    HELP_STRING = f"{executable.split('/')[-1]} {argv[0]} [--start/-s]=[0] [--end/-e]=[1000] [--start/-s]=[reciprocals.S] [--sectname/-sn]=[.section reciprocals, \"a\", @progbits] [--perline/-pl]=[2]"
+    HELP_STRING = f"{executable.split('/')[-1]} {argv[0]} [--start/-s]=[0] [--end/-e]=[1000] [--start/-s]=[reciprocals.S] [--sectname/-sn]=[.section reciprocals, \"a\", @progbits] [--perline/-pl]=[2] [--prefix/-pr]=[.int]"
 
     for arg in argv:
         start = parse_or_default(arg, ["--start", "-s"], 1)
